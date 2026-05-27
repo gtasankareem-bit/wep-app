@@ -3,163 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة أستريتز الرسمية</title>
+    <title>منصة أستريتز</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Cairo', sans-serif; background-color: #0d1117; color: #c9d1d9; padding-bottom: 70px; overflow-x: hidden; }
+        /* ألوان تويتر/إكس الهادئة */
+        body { font-family: 'Cairo', sans-serif; background-color: #000000; color: #e7e9ea; padding-bottom: 60px; overflow-x: hidden; }
         
-        /* شريط التنقل السفلي الاحترافي */
-        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #161b22; border-top: 1px solid #30363d; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
-        .nav-item { color: #8b949e; text-decoration: none; font-size: 12px; font-weight: 600; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.3s; }
-        .nav-item.active { color: #58a6ff; }
-        .nav-item icon { font-size: 20px; margin-bottom: 2px; }
-
-        /* الصفحات */
-        .page { display: none; padding: 20px; animation: fadeIn 0.3s ease-in-out; }
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); border-top: 1px solid #2f3336; display: flex; justify-content: space-around; padding: 12px 0; z-index: 1000; }
+        .nav-item { color: #71767b; text-decoration: none; font-size: 13px; font-weight: 600; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s; }
+        .nav-item.active { color: #1d9bf0; }
+        
+        .page { display: none; padding: 15px; animation: fadeIn 0.3s ease; }
         .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        h1 { font-size: 22px; font-weight: 700; color: #f0f6fc; margin-bottom: 20px; text-align: center; }
-
-        /* كروت البوستات */
-        .post-card { background-color: #161b22; border: 1px solid #30363d; border-radius: 14px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .post-author { font-weight: 700; color: #58a6ff; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-        .post-author img { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #30363d; }
-        .post-content { font-size: 15px; color: #e6edf3; line-height: 1.6; margin-bottom: 12px; }
-        .post-actions { display: flex; border-top: 1px solid #21262d; padding-top: 10px; justify-content: space-between; font-size: 13px; color: #8b949e; }
-        .action-btn { display: flex; align-items: center; gap: 5px; cursor: pointer; transition: 0.2s; }
-        .action-btn:hover { color: #58a6ff; }
+        /* تصميم البوست (تويتر ستايل) */
+        .tweet { display: flex; gap: 10px; border-bottom: 1px solid #2f3336; padding: 15px 0; }
+        .tweet-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #333; flex-shrink: 0; }
+        .tweet-body { flex-grow: 1; }
+        .tweet-header { font-size: 15px; font-weight: 700; display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .tweet-author { color: #e7e9ea; }
+        .tweet-admin-badge { color: #ffd700; font-size: 12px; margin-right: 5px; }
+        .tweet-text { font-size: 15px; color: #e7e9ea; line-height: 1.5; margin-bottom: 12px; white-space: pre-wrap; }
+        
+        /* أزرار التفاعل */
+        .tweet-actions { display: flex; justify-content: space-between; align-items: center; color: #71767b; font-size: 13px; max-width: 300px; }
+        .action-btn { display: flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s; }
+        .action-btn.liked { color: #f91880; }
+        .action-btn:hover { filter: brightness(1.2); }
+        .admin-delete { color: #f4212e; display: none; } /* يظهر للأدمن فقط */
 
         /* صفحة الكتابة */
-        .write-container { background-color: #161b22; border: 1px solid #30363d; border-radius: 14px; padding: 20px; }
-        textarea { width: 100%; background-color: #0d1117; border: 1px solid #30363d; border-radius: 10px; padding: 12px; color: white; font-family: 'Cairo', sans-serif; font-size: 15px; resize: none; margin-bottom: 15px; outline: none; }
-        textarea:focus { border-color: #58a6ff; }
-        .submit-btn { background-color: #238636; color: white; border: none; padding: 12px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 15px; border-radius: 10px; cursor: pointer; width: 100%; transition: 0.2s; }
-        .submit-btn:hover { background-color: #2ea043; }
-
-        /* صفحة البروفايل */
-        .profile-header { background-color: #161b22; border: 1px solid #30363d; border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 20px; }
-        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; border: 2px solid #58a6ff; margin-bottom: 10px; }
-        .profile-name { font-size: 18px; font-weight: 700; color: #f0f6fc; }
-        .profile-stats { display: flex; justify-content: space-around; margin-top: 15px; background: #0d1117; padding: 10px; border-radius: 10px; border: 1px solid #30363d; }
-        .stat-box { text-align: center; }
-        .stat-val { font-weight: 700; color: #58a6ff; font-size: 16px; }
-        .stat-lbl { font-size: 11px; color: #8b949e; }
+        textarea { width: 100%; background-color: transparent; border: none; border-bottom: 1px solid #2f3336; padding: 10px 0; color: white; font-family: 'Cairo', sans-serif; font-size: 18px; resize: none; margin-bottom: 15px; outline: none; }
+        .submit-btn { background-color: #1d9bf0; color: white; border: none; padding: 10px 20px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 15px; border-radius: 20px; cursor: pointer; float: left; }
+        
+        /* شاشة التعليقات المنبثقة (Modal) */
+        .comments-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 2000; padding: 15px; overflow-y: auto; }
+        .comments-modal.active { display: block; }
+        .close-modal { font-size: 24px; color: #e7e9ea; cursor: pointer; margin-bottom: 15px; display: inline-block; }
+        .comment-input-area { display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid #2f3336; padding-top: 15px; }
+        .comment-input-area input { flex-grow: 1; background: #202327; border: none; border-radius: 20px; padding: 10px 15px; color: white; outline: none; font-family: 'Cairo'; }
+        .comment-btn { background: #1d9bf0; border: none; color: white; border-radius: 20px; padding: 0 15px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="feed-page" class="page active">
-        <h1>🏠 ساحة أستريتز</h1>
-        <div id="posts-container">
-            </div>
+        <div id="posts-container"></div>
     </div>
 
     <div id="write-page" class="page">
-        <h1>✍️ خط خاطرتك</h1>
-        <div class="write-container">
-            <textarea id="post-text" rows="5" placeholder="بماذا تفكر الآن يا زعيم؟..."></textarea>
-            <button class="submit-btn" onclick="publishPost()">🚀 نشر المنشور فوراً</button>
-        </div>
+        <textarea id="post-text" rows="4" placeholder="ماذا يحدث؟..."></textarea>
+        <button class="submit-btn" onclick="publishPost()">نشر</button>
+        <div style="clear: both;"></div>
     </div>
 
     <div id="profile-page" class="page">
-        <h1>👤 ملفك الشخصي</h1>
-        <div class="profile-header">
-            <img class="profile-avatar" id="user-img" src="https://via.placeholder.com/100" alt="Avatar">
-            <div class="profile-name" id="user-name">جاري التحميل...</div>
-            <div class="profile-stats">
-                <div class="stat-box"><div class="stat-val" id="user-points">120</div><div class="stat-lbl">النقاط ⭐</div></div>
-                <div class="stat-box"><div class="stat-val" id="user-likes">45</div><div class="stat-lbl">اللايكات ❤️</div></div>
-            </div>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img id="user-img" src="https://via.placeholder.com/80" style="width:80px; border-radius:50%; margin-bottom:10px;">
+            <h2 id="user-name">زائر</h2>
         </div>
-        <h3 style="margin-bottom: 10px; font-size: 14px; color: #8b949e;">📝 منشوراتك الحالية:</h3>
+        <hr style="border-color: #2f3336; margin-bottom: 10px;">
+        <h3 style="font-size: 16px; margin-bottom: 10px; color: #71767b;">منشوراتك:</h3>
         <div id="my-posts-container"></div>
     </div>
 
+    <div id="comments-modal" class="comments-modal">
+        <span class="close-modal" onclick="closeComments()">× العودة</span>
+        <div id="active-post-view" style="border-bottom: 1px solid #2f3336; padding-bottom: 15px; margin-bottom: 15px;"></div>
+        <div id="comments-list"></div>
+        <div class="comment-input-area">
+            <input type="text" id="comment-text" placeholder="اكتب ردك...">
+            <button class="comment-btn" onclick="addComment()">رد</button>
+        </div>
+    </div>
+
     <div class="nav-bar">
-        <div class="nav-item active" onclick="switchPage('feed-page', this)"><icon>🏠</icon>الرئيسية</div>
-        <div class="nav-item" onclick="switchPage('write-page', this)"><icon>✍️</icon>نشر</div>
-        <div class="nav-item" onclick="switchPage('profile-page', this)"><icon>👤</icon>بروفايلك</div>
+        <div class="nav-item active" onclick="switchPage('feed-page', this)">🏠<br>الرئيسية</div>
+        <div class="nav-item" onclick="switchPage('write-page', this)">✍️<br>نشر</div>
+        <div class="nav-item" onclick="switchPage('profile-page', this)">👤<br>بروفايل</div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // لفتح الشاشة كاملة
+        tg.expand();
+        
+        const ADMIN_ID = 1078701974; // الآي دي بتاعك
+        let currentUser = { id: 123, name: "زائر", photo: "" };
 
-        // عرض بيانات مستخدم تليجرام الحقيقية في البروفايل
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            const user = tg.initDataUnsafe.user;
-            document.getElementById('user-name').innerText = user.first_name;
-            if(user.photo_url) {
-                document.getElementById('user-img').src = user.photo_url;
-            }
+            currentUser = {
+                id: tg.initDataUnsafe.user.id,
+                name: tg.initDataUnsafe.user.first_name,
+                photo: tg.initDataUnsafe.user.photo_url || "https://via.placeholder.com/40"
+            };
+            document.getElementById('user-name').innerText = currentUser.name;
+            if(currentUser.photo) document.getElementById('user-img').src = currentUser.photo;
         }
 
-        // التنقل بين الصفحات بدون إغلاق التطبيق
+        // قاعدة بيانات محلية "نظيفة" (صفر منشورات)
+        let posts = [];
+        let activePostId = null;
+
         function switchPage(pageId, element) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
             element.classList.add('active');
+            if(pageId === 'feed-page') renderPosts();
         }
 
-        // بيانات وهمية مؤقتاً لتشوف الترتيب واللايكات
-        let dummyPosts = [
-            { id: 1, author: "كريم الباشا", text: "النجاح ليس بمقدار ما تحققه، بل بمقدار التحديات التي تتغلب عليها! 🌌", likes: 14, comments: 3 },
-            { id: 2, author: "أحمد علي", text: "منصة أستريتز هتدمر الساحة قريباً.. شغل عالي ونظيف! 🔥", likes: 29, comments: 8 }
-        ];
-
-        // عرض البوستات في الصفحة الرئيسية
         function renderPosts() {
             const container = document.getElementById('posts-container');
-            container.innerHTML = '';
-            // خلط أو تغيير الترتيب عشوائياً لمحاكاة التحديث كل 5 ثواني
-            dummyPosts.sort(() => Math.random() - 0.5); 
+            container.innerHTML = posts.length === 0 ? "<p style='text-align:center; color:#71767b; margin-top:20px;'>لا توجد منشورات بعد، كن أول من ينشر!</p>" : "";
             
-            dummyPosts.forEach(post => {
+            // نعرض البوستات الأحدث فوق
+            [...posts].reverse().forEach(post => {
+                const isLiked = post.likedBy.includes(currentUser.id);
+                const isAdmin = currentUser.id === ADMIN_ID;
+                const adminBadge = post.authorId === ADMIN_ID ? "<span class='tweet-admin-badge'>👑 المالك</span>" : "";
+                
                 container.innerHTML += `
-                    <div class="post-card">
-                        <div class="post-author">👤 ${post.author}</div>
-                        <div class="post-content">${post.text}</div>
-                        <div class="post-actions">
-                            <div class="action-btn" onclick="likePost(${post.id})">❤️ إعجاب (${post.likes})</div>
-                            <div class="action-btn">💬 تعليق (${post.comments})</div>
+                    <div class="tweet" id="post-${post.id}">
+                        <img src="${post.authorPhoto}" class="tweet-avatar">
+                        <div class="tweet-body">
+                            <div class="tweet-header">
+                                <span class="tweet-author">${post.authorName} ${adminBadge}</span>
+                            </div>
+                            <div class="tweet-text">${post.text}</div>
+                            <div class="tweet-actions">
+                                <div class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+                                    ${isLiked ? '❤️' : '🤍'} ${post.likedBy.length}
+                                </div>
+                                <div class="action-btn" onclick="openComments(${post.id})">💬 ${post.comments.length}</div>
+                                <div class="action-btn" onclick="reportPost(${post.id})">🚩 بلاغ</div>
+                                ${isAdmin || post.authorId === currentUser.id ? `<div class="action-btn admin-delete" style="display:flex;" onclick="deletePost(${post.id})">🗑️ حذف</div>` : ''}
+                            </div>
                         </div>
                     </div>
                 `;
             });
         }
 
-        // تحديث البوستات وترتيبها تلقائياً كل 5 ثواني! ⏱️
-        setInterval(renderPosts, 5000);
-        renderPosts();
-
-        // وظيفة النشر الاحترافية (بدون خروج!)
         function publishPost() {
             const txt = document.getElementById('post-text').value.trim();
             if(!txt) return;
             
-            // إضافة البوست الجديد للمصفوفة فوراً لتظهر في الرئيسية
-            dummyPosts.unshift({
+            posts.push({
                 id: Date.now(),
-                author: tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name : "مستخدم أستريتز",
+                authorId: currentUser.id,
+                authorName: currentUser.name,
+                authorPhoto: currentUser.photo,
                 text: txt,
-                likes: 0,
-                comments: 0
+                likedBy: [], // مصفوفة لتخزين من قام بالإعجاب لمنع التكرار
+                comments: [] // مصفوفة لتخزين التعليقات
             });
             
-            document.getElementById('post-text').value = ''; // تنظيف الخانة
-            switchPage('feed-page', document.querySelectorAll('.nav-item')[0]); // نقله للرئيسية فوراً
-            renderPosts(); // تحديث القائمة
+            document.getElementById('post-text').value = ''; 
+            switchPage('feed-page', document.querySelectorAll('.nav-item')[0]);
         }
 
-        function likePost(id) {
-            const post = dummyPosts.find(p => p.id === id);
-            if(post) { post.likes++; renderPosts(); }
+        // الإعجاب الحقيقي: ضغطة تحط لايك، ضغطة تشيله
+        function toggleLike(postId) {
+            const post = posts.find(p => p.id === postId);
+            if(!post) return;
+            
+            const index = post.likedBy.indexOf(currentUser.id);
+            if(index === -1) {
+                post.likedBy.push(currentUser.id); // إضافة لايك
+            } else {
+                post.likedBy.splice(index, 1); // إزالة اللايك
+            }
+            renderPosts();
         }
+
+        // فتح التعليقات
+        function openComments(postId) {
+            activePostId = postId;
+            const post = posts.find(p => p.id === postId);
+            document.getElementById('comments-modal').classList.add('active');
+            renderCommentsView(post);
+        }
+
+        function closeComments() {
+            document.getElementById('comments-modal').classList.remove('active');
+            activePostId = null;
+            renderPosts(); // تحديث الأرقام برة
+        }
+
+        function renderCommentsView(post) {
+            document.getElementById('active-post-view').innerHTML = `<div style="color:#e7e9ea;">${post.text}</div>`;
+            const list = document.getElementById('comments-list');
+            list.innerHTML = post.comments.length === 0 ? "<div style='color:#71767b; font-size:13px;'>لا توجد تعليقات، كن أول من يرد!</div>" : "";
+            
+            post.comments.forEach(c => {
+                list.innerHTML += `
+                    <div style="margin-top: 10px; padding: 10px; background: #16181c; border-radius: 10px;">
+                        <strong style="color:#1d9bf0; font-size:13px;">👤 ${c.authorName}</strong>
+                        <div style="color:#e7e9ea; font-size:14px; margin-top:4px;">${c.text}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function addComment() {
+            const txt = document.getElementById('comment-text').value.trim();
+            if(!txt || !activePostId) return;
+            
+            const post = posts.find(p => p.id === activePostId);
+            post.comments.push({ authorName: currentUser.name, text: txt });
+            document.getElementById('comment-text').value = '';
+            renderCommentsView(post);
+        }
+
+        function reportPost(postId) {
+            alert("تم إرسال البلاغ لمالك المنصة وسيتم مراجعته فوراً. 🚩");
+            // هيتم ربطها بالبوت لاحقاً لترسل رسالة لك
+        }
+
+        function deletePost(postId) {
+            if(confirm("هل أنت متأكد من حذف هذا المنشور نهائياً؟")) {
+                posts = posts.filter(p => p.id !== postId);
+                renderPosts();
+            }
+        }
+
+        renderPosts();
     </script>
 </body>
 </html>
+
