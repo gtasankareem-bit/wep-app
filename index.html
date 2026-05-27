@@ -33,7 +33,7 @@
         .action-btn { display: flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s; }
         .action-btn.liked { color: #f91880; }
         .action-btn:hover { filter: brightness(1.2); }
-        .admin-delete { color: #f4212e; display: none; } /* يظهر للأدمن فقط */
+        .admin-delete { color: #f4212e; }
 
         /* صفحة الكتابة */
         textarea { width: 100%; background-color: transparent; border: none; border-bottom: 1px solid #2f3336; padding: 10px 0; color: white; font-family: 'Cairo', sans-serif; font-size: 18px; resize: none; margin-bottom: 15px; outline: none; }
@@ -91,7 +91,11 @@
         tg.expand();
         
         const ADMIN_ID = 1078701974; // الآي دي بتاعك
-        let currentUser = { id: 123, name: "زائر", photo: "" };
+        
+        // 🎯 تم وضع الرابط الخاص بك هنا بنجاح ليربط الواجهة بقاعدة البيانات!
+        const API_URL = "https://control.katabump.com/server/bf3559cc";
+
+        let currentUser = { id: 123, name: "زائر", photo: "https://via.placeholder.com/40" };
 
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             currentUser = {
@@ -103,8 +107,6 @@
             if(currentUser.photo) document.getElementById('user-img').src = currentUser.photo;
         }
 
-        // قاعدة بيانات محلية "نظيفة" (صفر منشورات)
-        let posts = [];
         let activePostId = null;
 
         function switchPage(pageId, element) {
@@ -115,74 +117,75 @@
             if(pageId === 'feed-page') renderPosts();
         }
 
+        // جلب المنشورات الحقيقية من السيرفر وعرضها
         function renderPosts() {
-            const container = document.getElementById('posts-container');
-            container.innerHTML = posts.length === 0 ? "<p style='text-align:center; color:#71767b; margin-top:20px;'>لا توجد منشورات بعد، كن أول من ينشر!</p>" : "";
-            
-            // نعرض البوستات الأحدث فوق
-            [...posts].reverse().forEach(post => {
-                const isLiked = post.likedBy.includes(currentUser.id);
-                const isAdmin = currentUser.id === ADMIN_ID;
-                const adminBadge = post.authorId === ADMIN_ID ? "<span class='tweet-admin-badge'>👑 المالك</span>" : "";
+            fetch(`${API_URL}/get_posts`)
+            .then(res => res.json())
+            .then(posts => {
+                const container = document.getElementById('posts-container');
+                container.innerHTML = posts.length === 0 ? "<p style='text-align:center; color:#71767b; margin-top:20px;'>لا توجد منشورات بعد، كن أول من ينشر!</p>" : "";
                 
-                container.innerHTML += `
-                    <div class="tweet" id="post-${post.id}">
-                        <img src="${post.authorPhoto}" class="tweet-avatar">
-                        <div class="tweet-body">
-                            <div class="tweet-header">
-                                <span class="tweet-author">${post.authorName} ${adminBadge}</span>
-                            </div>
-                            <div class="tweet-text">${post.text}</div>
-                            <div class="tweet-actions">
-                                <div class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
-                                    ${isLiked ? '❤️' : '🤍'} ${post.likedBy.length}
+                posts.forEach(post => {
+                    const isLiked = post.likedBy.includes(currentUser.id);
+                    const isAdmin = currentUser.id === ADMIN_ID;
+                    const adminBadge = post.authorId === ADMIN_ID ? "<span class='tweet-admin-badge'>👑 المالك</span>" : "";
+                    
+                    container.innerHTML += `
+                        <div class="tweet" id="post-${post.id}">
+                            <img src="${post.authorPhoto}" class="tweet-avatar">
+                            <div class="tweet-body">
+                                <div class="tweet-header">
+                                    <span class="tweet-author">${post.authorName} ${adminBadge}</span>
                                 </div>
-                                <div class="action-btn" onclick="openComments(${post.id})">💬 ${post.comments.length}</div>
-                                <div class="action-btn" onclick="reportPost(${post.id})">🚩 بلاغ</div>
-                                ${isAdmin || post.authorId === currentUser.id ? `<div class="action-btn admin-delete" style="display:flex;" onclick="deletePost(${post.id})">🗑️ حذف</div>` : ''}
+                                <div class="tweet-text">${post.text}</div>
+                                <div class="tweet-actions">
+                                    <div class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+                                        ${isLiked ? '❤️' : '🤍'} ${post.likedBy.length}
+                                    </div>
+                                    <div class="action-btn" onclick="openComments(${post.id}, ${JSON.stringify(post)})">💬 ${post.comments.length}</div>
+                                    <div class="action-btn" onclick="reportPost(${post.id})">🚩 بلاغ</div>
+                                    ${isAdmin || post.authorId === currentUser.id ? `<div class="action-btn admin-delete" onclick="deletePost(${post.id})">🗑️ حذف</div>` : ''}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            }).catch(err => console.error("Error loading posts:", err));
         }
 
+        // نشر البوست وإرساله مباشرة للسيرفر لحفظه للأبد
         function publishPost() {
             const txt = document.getElementById('post-text').value.trim();
             if(!txt) return;
             
-            posts.push({
-                id: Date.now(),
-                authorId: currentUser.id,
-                authorName: currentUser.name,
-                authorPhoto: currentUser.photo,
-                text: txt,
-                likedBy: [], // مصفوفة لتخزين من قام بالإعجاب لمنع التكرار
-                comments: [] // مصفوفة لتخزين التعليقات
-            });
-            
-            document.getElementById('post-text').value = ''; 
-            switchPage('feed-page', document.querySelectorAll('.nav-item')[0]);
+            fetch(`${API_URL}/add_post`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    authorId: currentUser.id,
+                    authorName: currentUser.name,
+                    authorPhoto: currentUser.photo,
+                    text: txt
+                })
+            }).then(() => {
+                document.getElementById('post-text').value = ''; 
+                switchPage('feed-page', document.querySelectorAll('.nav-item')[0]);
+            }).catch(err => console.error("Error publishing post:", err));
         }
 
-        // الإعجاب الحقيقي: ضغطة تحط لايك، ضغطة تشيله
+        // تفاعل اللايك الحقيقي عبر قاعدة البيانات
         function toggleLike(postId) {
-            const post = posts.find(p => p.id === postId);
-            if(!post) return;
-            
-            const index = post.likedBy.indexOf(currentUser.id);
-            if(index === -1) {
-                post.likedBy.push(currentUser.id); // إضافة لايك
-            } else {
-                post.likedBy.splice(index, 1); // إزالة اللايك
-            }
-            renderPosts();
+            fetch(`${API_URL}/toggle_like`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ postId: postId, userId: currentUser.id })
+            }).then(() => renderPosts())
+            .catch(err => console.error("Error toggling like:", err));
         }
 
-        // فتح التعليقات
-        function openComments(postId) {
+        // فتح نافذة التعليقات
+        function openComments(postId, post) {
             activePostId = postId;
-            const post = posts.find(p => p.id === postId);
             document.getElementById('comments-modal').classList.add('active');
             renderCommentsView(post);
         }
@@ -190,11 +193,11 @@
         function closeComments() {
             document.getElementById('comments-modal').classList.remove('active');
             activePostId = null;
-            renderPosts(); // تحديث الأرقام برة
+            renderPosts();
         }
 
         function renderCommentsView(post) {
-            document.getElementById('active-post-view').innerHTML = `<div style="color:#e7e9ea;">${post.text}</div>`;
+            document.getElementById('active-post-view').innerHTML = `<div style="color:#e7e9ea; font-weight:bold;">${post.text}</div>`;
             const list = document.getElementById('comments-list');
             list.innerHTML = post.comments.length === 0 ? "<div style='color:#71767b; font-size:13px;'>لا توجد تعليقات، كن أول من يرد!</div>" : "";
             
@@ -208,25 +211,43 @@
             });
         }
 
+        // إضافة رد حقيقي وحفظه في الهارد ديسك
         function addComment() {
             const txt = document.getElementById('comment-text').value.trim();
             if(!txt || !activePostId) return;
             
-            const post = posts.find(p => p.id === activePostId);
-            post.comments.push({ authorName: currentUser.name, text: txt });
-            document.getElementById('comment-text').value = '';
-            renderCommentsView(post);
+            fetch(`${API_URL}/add_comment`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ postId: activePostId, authorName: currentUser.name, text: txt })
+            }).then(() => {
+                document.getElementById('comment-text').value = '';
+                fetch(`${API_URL}/get_posts`).then(res => res.json()).then(posts => {
+                    const post = posts.find(p => p.id === activePostId);
+                    if(post) renderCommentsView(post);
+                });
+            }).catch(err => console.error("Error adding comment:", err));
         }
 
+        // إرسال بلاغ فوري للبوت ليأتيك إشعار على التليجرام
         function reportPost(postId) {
-            alert("تم إرسال البلاغ لمالك المنصة وسيتم مراجعته فوراً. 🚩");
-            // هيتم ربطها بالبوت لاحقاً لترسل رسالة لك
+            fetch(`${API_URL}/report_post`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ postId: postId })
+            }).then(() => alert("تم إرسال البلاغ لمالك المنصة وسيتم مراجعته فوراً. 🚩"))
+            .catch(err => console.error("Error reporting post:", err));
         }
 
+        // حذف البوست نهائياً من قاعدة البيانات
         function deletePost(postId) {
             if(confirm("هل أنت متأكد من حذف هذا المنشور نهائياً؟")) {
-                posts = posts.filter(p => p.id !== postId);
-                renderPosts();
+                fetch(`${API_URL}/delete_post`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ postId: postId })
+                }).then(() => renderPosts())
+                .catch(err => console.error("Error deleting post:", err));
             }
         }
 
@@ -234,4 +255,3 @@
     </script>
 </body>
 </html>
-
