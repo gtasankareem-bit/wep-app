@@ -3,32 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة أستريتز</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600&display=swap" rel="stylesheet">
+    <title>منصة أستريتز الرسمية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: 'Cairo', sans-serif; background-color: #0d1117; color: #c9d1d9; text-align: center; padding: 20px; }
-        .card { background-color: #161b22; border: 1px solid #30363d; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); margin-top: 50px; }
-        h1 { color: #f0f6fc; font-size: 24px; }
-        textarea { width: 90%; background-color: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 10px; color: white; font-family: 'Cairo', sans-serif; resize: none; }
-        button { background-color: #1f883d; color: white; border: none; padding: 10px 30px; font-family: 'Cairo', sans-serif; font-weight: bold; border-radius: 20px; cursor: pointer; margin-top: 15px; width: 100%; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Cairo', sans-serif; background-color: #0d1117; color: #c9d1d9; padding-bottom: 70px; overflow-x: hidden; }
+        
+        /* شريط التنقل السفلي الاحترافي */
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #161b22; border-top: 1px solid #30363d; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+        .nav-item { color: #8b949e; text-decoration: none; font-size: 12px; font-weight: 600; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.3s; }
+        .nav-item.active { color: #58a6ff; }
+        .nav-item icon { font-size: 20px; margin-bottom: 2px; }
+
+        /* الصفحات */
+        .page { display: none; padding: 20px; animation: fadeIn 0.3s ease-in-out; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h1 { font-size: 22px; font-weight: 700; color: #f0f6fc; margin-bottom: 20px; text-align: center; }
+
+        /* كروت البوستات */
+        .post-card { background-color: #161b22; border: 1px solid #30363d; border-radius: 14px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .post-author { font-weight: 700; color: #58a6ff; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .post-author img { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #30363d; }
+        .post-content { font-size: 15px; color: #e6edf3; line-height: 1.6; margin-bottom: 12px; }
+        .post-actions { display: flex; border-top: 1px solid #21262d; padding-top: 10px; justify-content: space-between; font-size: 13px; color: #8b949e; }
+        .action-btn { display: flex; align-items: center; gap: 5px; cursor: pointer; transition: 0.2s; }
+        .action-btn:hover { color: #58a6ff; }
+
+        /* صفحة الكتابة */
+        .write-container { background-color: #161b22; border: 1px solid #30363d; border-radius: 14px; padding: 20px; }
+        textarea { width: 100%; background-color: #0d1117; border: 1px solid #30363d; border-radius: 10px; padding: 12px; color: white; font-family: 'Cairo', sans-serif; font-size: 15px; resize: none; margin-bottom: 15px; outline: none; }
+        textarea:focus { border-color: #58a6ff; }
+        .submit-btn { background-color: #238636; color: white; border: none; padding: 12px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 15px; border-radius: 10px; cursor: pointer; width: 100%; transition: 0.2s; }
+        .submit-btn:hover { background-color: #2ea043; }
+
+        /* صفحة البروفايل */
+        .profile-header { background-color: #161b22; border: 1px solid #30363d; border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 20px; }
+        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; border: 2px solid #58a6ff; margin-bottom: 10px; }
+        .profile-name { font-size: 18px; font-weight: 700; color: #f0f6fc; }
+        .profile-stats { display: flex; justify-content: space-around; margin-top: 15px; background: #0d1117; padding: 10px; border-radius: 10px; border: 1px solid #30363d; }
+        .stat-box { text-align: center; }
+        .stat-val { font-weight: 700; color: #58a6ff; font-size: 16px; }
+        .stat-lbl { font-size: 11px; color: #8b949e; }
     </style>
 </head>
 <body>
-    <h1>🌌 منصة أستريتز المصغرة</h1>
-    <div class="card">
-        <p>اكتب خاطرتك أو اقتباستك بالأسفل وانشرها فوراً:</p>
-        <textarea id="msg" rows="4" placeholder="بماذا تفكر الآن..."></textarea>
-        <button onclick="sendData()">🚀 نشر المنشور الآن</button>
+
+    <div id="feed-page" class="page active">
+        <h1>🏠 ساحة أستريتز</h1>
+        <div id="posts-container">
+            </div>
     </div>
+
+    <div id="write-page" class="page">
+        <h1>✍️ خط خاطرتك</h1>
+        <div class="write-container">
+            <textarea id="post-text" rows="5" placeholder="بماذا تفكر الآن يا زعيم؟..."></textarea>
+            <button class="submit-btn" onclick="publishPost()">🚀 نشر المنشور فوراً</button>
+        </div>
+    </div>
+
+    <div id="profile-page" class="page">
+        <h1>👤 ملفك الشخصي</h1>
+        <div class="profile-header">
+            <img class="profile-avatar" id="user-img" src="https://via.placeholder.com/100" alt="Avatar">
+            <div class="profile-name" id="user-name">جاري التحميل...</div>
+            <div class="profile-stats">
+                <div class="stat-box"><div class="stat-val" id="user-points">120</div><div class="stat-lbl">النقاط ⭐</div></div>
+                <div class="stat-box"><div class="stat-val" id="user-likes">45</div><div class="stat-lbl">اللايكات ❤️</div></div>
+            </div>
+        </div>
+        <h3 style="margin-bottom: 10px; font-size: 14px; color: #8b949e;">📝 منشوراتك الحالية:</h3>
+        <div id="my-posts-container"></div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="switchPage('feed-page', this)"><icon>🏠</icon>الرئيسية</div>
+        <div class="nav-item" onclick="switchPage('write-page', this)"><icon>✍️</icon>نشر</div>
+        <div class="nav-item" onclick="switchPage('profile-page', this)"><icon>👤</icon>بروفايلك</div>
+    </div>
+
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand();
-        function sendData() {
-            const text = document.getElementById('msg').value.trim();
-            if (!text) return;
-            tg.sendData(text);
-            tg.close();
+        tg.expand(); // لفتح الشاشة كاملة
+
+        // عرض بيانات مستخدم تليجرام الحقيقية في البروفايل
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            const user = tg.initDataUnsafe.user;
+            document.getElementById('user-name').innerText = user.first_name;
+            if(user.photo_url) {
+                document.getElementById('user-img').src = user.photo_url;
+            }
+        }
+
+        // التنقل بين الصفحات بدون إغلاق التطبيق
+        function switchPage(pageId, element) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            element.classList.add('active');
+        }
+
+        // بيانات وهمية مؤقتاً لتشوف الترتيب واللايكات
+        let dummyPosts = [
+            { id: 1, author: "كريم الباشا", text: "النجاح ليس بمقدار ما تحققه، بل بمقدار التحديات التي تتغلب عليها! 🌌", likes: 14, comments: 3 },
+            { id: 2, author: "أحمد علي", text: "منصة أستريتز هتدمر الساحة قريباً.. شغل عالي ونظيف! 🔥", likes: 29, comments: 8 }
+        ];
+
+        // عرض البوستات في الصفحة الرئيسية
+        function renderPosts() {
+            const container = document.getElementById('posts-container');
+            container.innerHTML = '';
+            // خلط أو تغيير الترتيب عشوائياً لمحاكاة التحديث كل 5 ثواني
+            dummyPosts.sort(() => Math.random() - 0.5); 
+            
+            dummyPosts.forEach(post => {
+                container.innerHTML += `
+                    <div class="post-card">
+                        <div class="post-author">👤 ${post.author}</div>
+                        <div class="post-content">${post.text}</div>
+                        <div class="post-actions">
+                            <div class="action-btn" onclick="likePost(${post.id})">❤️ إعجاب (${post.likes})</div>
+                            <div class="action-btn">💬 تعليق (${post.comments})</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // تحديث البوستات وترتيبها تلقائياً كل 5 ثواني! ⏱️
+        setInterval(renderPosts, 5000);
+        renderPosts();
+
+        // وظيفة النشر الاحترافية (بدون خروج!)
+        function publishPost() {
+            const txt = document.getElementById('post-text').value.trim();
+            if(!txt) return;
+            
+            // إضافة البوست الجديد للمصفوفة فوراً لتظهر في الرئيسية
+            dummyPosts.unshift({
+                id: Date.now(),
+                author: tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name : "مستخدم أستريتز",
+                text: txt,
+                likes: 0,
+                comments: 0
+            });
+            
+            document.getElementById('post-text').value = ''; // تنظيف الخانة
+            switchPage('feed-page', document.querySelectorAll('.nav-item')[0]); // نقله للرئيسية فوراً
+            renderPosts(); // تحديث القائمة
+        }
+
+        function likePost(id) {
+            const post = dummyPosts.find(p => p.id === id);
+            if(post) { post.likes++; renderPosts(); }
         }
     </script>
 </body>
